@@ -1,0 +1,42 @@
+[project]
+name = "mina-py"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "alembic>=1.18.1",
+    "asyncpg>=0.31.0",
+    "black>=26.1.0",
+    "fastapi>=0.128.0",
+    "greenlet>=3.3.1",
+    "mypy>=1.19.1",
+    "pydantic-settings>=2.12.0",
+    "ruff>=0.14.14",
+    "sqlalchemy>=2.0.46",
+]
+
+[tool.black]
+line-length = 81
+target-version = ["py312"]
+skip-string-normalization = true
+skip-magic-trailing-comma = true
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.mypy_cache
+  | \.pytest_cache
+  | \.venv
+  | build
+  | dist
+  | migrations
+)/
+'''
+
+[tool.mypy]
+exclude = "^(venv/|\\.venv/|build/|dist/|migrations/)"
+incremental = true
+cache_dir = ".mypy_cache"
+warn_unused_configs = true
