@@ -8,7 +8,9 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
+from app.core.config import get_settings
 from app.models.base import Base
+from app.models.users import User  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -21,12 +23,12 @@ if config.config_file_name is not None:
 
 env = context.get_x_argument(as_dictionary=True).get('env', 'dev')
 
+settings = get_settings()
+
 if env == "prod":
-    print("prod db")
-    conn_url = f"postgresql+asyncpg://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
+    conn_url = f"postgresql+asyncpg://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"
 else:
-    print("test db")
-    conn_url = f"postgresql+asyncpg://{os.getenv('TEST_POSTGRES_USER')}:{os.getenv('TEST_POSTGRES_PASSWORD')}@{os.getenv('TEST_POSTGRES_HOST')}:{os.getenv('TEST_POSTGRES_PORT')}/{os.getenv('TEST_POSTGRES_DB')}"
+    conn_url = f"postgresql+asyncpg://{settings.TEST_POSTGRES_USER}:{settings.TEST_POSTGRES_PASSWORD}@{settings.TEST_POSTGRES_HOST}:{settings.TEST_POSTGRES_PORT}/{settings.TEST_POSTGRES_DB}"
 
 config.set_main_option("sqlalchemy.url", conn_url)
 

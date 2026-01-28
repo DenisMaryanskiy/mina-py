@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     TEST_POSTGRES_USER: str = "test_user"
     TEST_POSTGRES_PASSWORD: str = "test_password"
     TEST_POSTGRES_HOST: str = "localhost"
-    TEST_POSTGRES_PORT: str = "5432"
+    TEST_POSTGRES_PORT: str = "5433"
 
     ENVIRONMENT: str = "dev"  # dev or prod
 
