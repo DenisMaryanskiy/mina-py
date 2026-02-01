@@ -19,5 +19,6 @@ class IsDeletedMixin:
         Boolean, default=False, nullable=False
     )
 
+
 class Base(DeclarativeBase):
     pass
