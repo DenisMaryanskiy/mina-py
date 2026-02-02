@@ -9,6 +9,7 @@ dependencies = [
     "argon2-cffi>=25.1.0",
     "asyncpg>=0.31.0",
     "black>=26.1.0",
+    "fastapi-mail>=1.6.1",
     "fastapi[standard]>=0.128.0",
     "greenlet>=3.3.1",
     "mypy>=1.19.1",

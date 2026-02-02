@@ -1,26 +1,16 @@
 import secrets
 
 from fastapi import BackgroundTasks, Depends, HTTPException, status
+from fastapi_mail import FastMail
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.users.router import users_router
 from app.core.database import get_db
+from app.core.email import get_mailer_config, prepare_message
 from app.core.security import hash_password
 from app.models.users import User
 from app.schemas.users import UserCreate, UserResponse
-
-
-def generate_activation_token() -> str:
-    """Generate a secure activation token for user account activation."""
-    return secrets.token_urlsafe(32)
-
-
-async def send_activation_email(email: str, activation_token: str) -> None:
-    """
-    TODO: Implement actual email sending logic, move methods to separate module.
-    """
-    print(f"Sending activation email to {email} with token: {activation_token}")
 
 
 @users_router.post(
@@ -67,7 +57,7 @@ async def register_user(
                 detail="Username is already taken.",
             )
 
-    activation_token = generate_activation_token()
+    activation_token = secrets.token_urlsafe(32)
 
     hashed_password = hash_password(user_data.password)
 
@@ -81,9 +71,12 @@ async def register_user(
     await db.commit()
     await db.refresh(new_user)
 
-    background_tasks.add_task(
-        send_activation_email, new_user.email, activation_token
-    )
+    mailer_config = get_mailer_config()
+    fm = FastMail(mailer_config)
+
+    message = prepare_message(new_user.email, activation_token)
+
+    background_tasks.add_task(fm.send_message, message)
 
     return UserResponse(
         id=new_user.id,

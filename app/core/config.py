@@ -16,6 +16,15 @@ class Settings(BaseSettings):
     TEST_POSTGRES_HOST: str = "localhost"
     TEST_POSTGRES_PORT: str = "5433"
 
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: str = "587"
+    SMTP_FROM: str = "test@example.org"
+    SMTP_PASSWORD: str = "bebe baba bubu bibi"
+    SMTP_STARTTLS: bool = True
+    SMTPL_SSL_TLS: bool = False
+    SMTP_USE_CREDENTIALS: bool = True
+    SMTP_VALIDATE_CERTS: bool = True
+
     ENVIRONMENT: str = "dev"  # dev or prod
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
