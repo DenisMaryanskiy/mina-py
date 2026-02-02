@@ -22,8 +22,8 @@ def get_mailer_config() -> ConnectionConfig:
 def prepare_message(email: str, activation_token: str) -> MessageSchema:
     """Prepare the email message for account activation."""
     subject = "Activate Your Account"
-    body = f"""Please use the following token to
-    activate your account: {activation_token}"""
+    body = f"""Please use the following link to
+    activate your account: http://localhost:8000/api/v1/users/activate/{activation_token}"""
     return MessageSchema(
         subject=subject, recipients=[email], body=body, subtype="plain"
     )
