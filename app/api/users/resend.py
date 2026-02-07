@@ -26,7 +26,7 @@ async def resend_activation_email(
     """
     Resend the activation email to a user who has not activated their account.
 
-    - **email**: The email address of the user to resend the activation email to.
+    - **username**: The username of the user to resend the activation email to.
     """
 
     result = await db.execute(select(User).where(User.username == username))
