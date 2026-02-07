@@ -7,7 +7,7 @@ from app.api.users.router import users_router
 from app.core.database import get_db
 from app.core.email import get_mailer_config, prepare_message
 from app.models.users import User
-from app.schemas.base import MessageResponse
+from app.schemas.base import HTTPErrorResponse, MessageResponse
 
 
 @users_router.post(
@@ -17,6 +17,16 @@ from app.schemas.base import MessageResponse
     summary="Resend account activation email",
     description="""Resend the activation email to a user who
     has not yet activated their account.""",
+    responses={
+        200: {
+            "description": "Activation email resent successfully.",
+            "model": MessageResponse,
+        },
+        400: {
+            "description": ("Invalid username or account already activated."),
+            "model": HTTPErrorResponse,
+        },
+    },
 )
 async def resend_activation_email(
     username: str,

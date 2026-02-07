@@ -11,3 +11,17 @@ class MessageResponse(BaseModel):
             "example": {"message": "Operation completed successfully"}
         }
     )
+
+
+class HTTPErrorResponse(BaseModel):
+    """Schema for HTTP error responses."""
+
+    detail: str = Field(..., description="Error detail message")
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "detail": "An error occurred while processing the request"
+            }
+        }
+    )

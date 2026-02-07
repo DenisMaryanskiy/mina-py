@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.users.router import users_router
 from app.core.database import get_db
 from app.models.users import User
-from app.schemas.base import MessageResponse
+from app.schemas.base import HTTPErrorResponse, MessageResponse
 
 
 @users_router.get(
@@ -14,6 +14,18 @@ from app.schemas.base import MessageResponse
     response_model=MessageResponse,
     summary="Activate a user account",
     description="Activate a user account using the provided activation token.",
+    responses={
+        200: {
+            "description": "User activated successfully.",
+            "model": MessageResponse,
+        },
+        400: {
+            "description": (
+                "Invalid activation token or account already activated."
+            ),
+            "model": HTTPErrorResponse,
+        },
+    },
 )
 async def activate_user(
     activation_token: str, db: AsyncSession = Depends(get_db)

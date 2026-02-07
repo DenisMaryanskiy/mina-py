@@ -10,6 +10,7 @@ from app.core.database import get_db
 from app.core.email import get_mailer_config, prepare_message
 from app.core.security import hash_password
 from app.models.users import User
+from app.schemas.base import HTTPErrorResponse
 from app.schemas.users import UserCreate, UserResponse
 
 
@@ -19,6 +20,15 @@ from app.schemas.users import UserCreate, UserResponse
     status_code=status.HTTP_201_CREATED,
     summary="Register a new user",
     description="Create a new user account with email, username, and password.",
+    responses={
+        201: {
+            "description": "User registered successfully. Activation email sent."
+        },
+        400: {
+            "description": "Email or username already exists",
+            "model": HTTPErrorResponse,
+        },
+    },
 )
 async def register_user(
     user_data: UserCreate,
