@@ -32,12 +32,10 @@ async def test_register_invalid_username(async_client: AsyncClient):
             "password": "StrongP@ssw0rd!",
         },
     )
-    assert response.status_code == 422
-    assert response.json()["detail"][0]["loc"] == ["body", "username"]
-    assert response.json()["detail"][0]["msg"] == (
-        """Value error, Username can only contain letters,
-                numbers, underscores, and hyphens."""
-    )
+    assert response.status_code == 400
+    data = response.json()
+    assert data["detail"] == "Validation error"
+    assert "Username can only contain letters" in data["errors"][0]["message"]
 
 
 @pytest.mark.asyncio
@@ -45,9 +43,7 @@ async def test_register_invalid_username(async_client: AsyncClient):
     "password, error_msg",
     (
         pytest.param(
-            "short",
-            "Password must be at least 8 characters long.",
-            id="too_short",
+            "short", "String should have at least 8 characters", id="too_short"
         ),
         pytest.param(
             "alllowercase1!",
@@ -82,14 +78,10 @@ async def test_register_invalid_password(
             "password": password,
         },
     )
-    assert response.status_code == 422
-    assert response.json()["detail"][0]["loc"] == ["body", "password"]
-    if len(password) < 8:
-        assert response.json()["detail"][0]["msg"] == (
-            "String should have at least 8 characters"
-        )
-    else:
-        assert response.json()["detail"][0]["msg"] == f"Value error, {error_msg}"
+    assert response.status_code == 400
+    data = response.json()
+    assert data["detail"] == "Validation error"
+    assert error_msg in data["errors"][0]["message"]
 
 
 @pytest.mark.asyncio

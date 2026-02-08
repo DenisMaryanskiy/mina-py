@@ -1,9 +1,11 @@
 import os
 
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
 
 from app.api.users import users_router
 from app.core.config import get_settings
+from app.core.exception import validation_exception_handler
 
 os.environ.setdefault("ENVIRONMENT", os.getenv("ENVIRONMENT", "dev"))
 settings = get_settings()  # Load settings based on the environment
@@ -20,5 +22,7 @@ app = FastAPI(
     openapi_version="3.1.0",
     root_path="/api/v1",
 )
+
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
 app.include_router(users_router)
