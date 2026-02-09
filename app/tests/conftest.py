@@ -1,5 +1,7 @@
 import logging
+import secrets
 
+import faker
 import pytest
 import pytest_asyncio
 from alembic import command
@@ -13,7 +15,9 @@ from sqlalchemy.ext.asyncio import (
 
 from app.core.config import get_settings
 from app.core.database import get_db
+from app.core.security import hash_password
 from app.main import app
+from app.models.users import User
 
 logger = logging.getLogger(__name__)
 
@@ -79,3 +83,21 @@ async def async_client():
         transport=transport, base_url="http://test"
     ) as client:
         yield client
+
+
+f = faker.Faker()
+
+
+@pytest_asyncio.fixture
+async def seed_user(async_session: AsyncSession):
+    """Seed user into Postgres test DB."""
+    u = User(
+        id=f.uuid4(),
+        username=f.user_name(),
+        email=f.email(),
+        password_hash=hash_password("S!trongP@ssw0rd!"),
+        activation_token=secrets.token_urlsafe(32),
+    )
+    async_session.add(u)
+    await async_session.commit()
+    yield u

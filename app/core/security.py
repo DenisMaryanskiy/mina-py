@@ -129,7 +129,6 @@ def verify_token(token: str, token_type: str = "access") -> str | None:
     """
     try:
         payload = decode_token(token)
-        print("Decoded token payload:", payload)
 
         if payload.get("type") != token_type:
             return None
