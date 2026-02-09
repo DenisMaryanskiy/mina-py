@@ -58,9 +58,7 @@ async def test_login_invalid_password(
 
 
 @pytest.mark.asyncio
-async def test_login_invalid_username(
-    async_client: AsyncClient, seed_activated_user: User
-):
+async def test_login_invalid_username(async_client: AsyncClient):
     response = await async_client.post(
         "/api/v1/users/login",
         json={
