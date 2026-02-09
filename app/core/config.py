@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     SMTP_USE_CREDENTIALS: bool = True
     SMTP_VALIDATE_CERTS: bool = True
 
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    JWT_SECRET_KEY: str = "some-super-secret-key"
+    JWT_ALGORITHM: str = "HS256"
+
     ENVIRONMENT: str = "dev"  # dev or prod
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")

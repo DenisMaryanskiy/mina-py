@@ -1,4 +1,5 @@
 from app.api.users.activation import users_router
+from app.api.users.login import users_router
 from app.api.users.register import users_router
 from app.api.users.resend import users_router
 

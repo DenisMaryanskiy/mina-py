@@ -117,6 +117,26 @@ class UserProfileEnhance(BaseModel):
     )
 
 
+class UserLogin(BaseModel):
+    """
+    Schema for user login request, allowing either email or username.
+    """
+
+    username_or_email: str = Field(
+        ..., description="Username or email for login"
+    )
+    password: str = Field(..., description="User's password")
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "username_or_email": "john_doe",
+                "password": "strong_password_123",
+            }
+        }
+    )
+
+
 # ================================
 # Response Schemas
 # ================================
@@ -163,3 +183,32 @@ class UserResponse(BaseModel):
             }
         },
     )
+
+
+class TokenResponse(BaseModel):
+    """JWT token response schema."""
+
+    access_token: str = Field(..., description="JWT access token")
+    refresh_token: str | None = Field(None, description="JWT refresh token")
+    token_type: str = Field(default="bearer", description="Token type")
+    expires_in: int = Field(..., description="Token expiration time in seconds")
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                "token_type": "bearer",
+                "expires_in": 3600,
+            }
+        }
+    )
+
+
+class LoginResponse(BaseModel):
+    """Response after successful login."""
+
+    user: UserResponse = Field(..., description="User information")
+    token: TokenResponse = Field(..., description="Authentication tokens")
+
+    model_config = ConfigDict(from_attributes=True)

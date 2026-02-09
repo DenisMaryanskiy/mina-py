@@ -1,3 +1,5 @@
+import uuid
+
 from sqlalchemy import Boolean, DateTime, Index, String, func, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -12,7 +14,7 @@ class User(Base, TimestampMixin, IsDeletedMixin):
         Index("idx_users_email", "email"),
     )
 
-    id: Mapped[str] = mapped_column(
+    id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         primary_key=True,
         server_default=text("uuid_generate_v4()"),
