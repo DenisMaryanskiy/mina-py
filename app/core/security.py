@@ -5,6 +5,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 from app.core.config import get_settings
+from app.core.logger import get_logger
 
 pwd_context = CryptContext(
     schemes=["argon2", "bcrypt"],
@@ -127,13 +128,21 @@ def verify_token(token: str, token_type: str = "access") -> str | None:
         of the correct type, otherwise None.
     :raises JWTError: If the token is invalid or expired.
     """
+    logger = get_logger()
     try:
         payload = decode_token(token)
 
-        if payload.get("type") != token_type:
+        payload_type = payload.get("type")
+        if payload_type != token_type:
+            logger.warning(
+                "Token type mismatch: expected '%s', got '%s'",
+                token_type,
+                payload_type,
+            )
             return None
 
         user_id = payload.get("sub")
         return user_id
-    except JWTError:
+    except JWTError as e:
+        logger.warning("Token verification failed: %s", str(e))
         return None
