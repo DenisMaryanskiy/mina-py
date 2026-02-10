@@ -42,6 +42,6 @@ async def test_refresh_token_non_existent_user(async_client: AsyncClient):
         headers={"Authorization": f"Bearer {refresh_token}"},
     )
 
-    assert response.status_code == 401
+    assert response.status_code == 403
     data = response.json()
     assert data["detail"] == "User account is not active or deleted"

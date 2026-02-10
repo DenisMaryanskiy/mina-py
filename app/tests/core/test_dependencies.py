@@ -22,5 +22,5 @@ async def test_get_current_user_inactive_user(
     token = create_access_token(seed_user.id)
     with pytest.raises(HTTPException) as exc_info:
         await get_current_user(token, async_session)
-    assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
+    assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
     assert exc_info.value.detail == "User account is not active or deleted"

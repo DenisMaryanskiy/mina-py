@@ -20,6 +20,10 @@ from app.schemas.users import UserProfileEnhance, UserResponse
             "description": "Unauthorized - Invalid or missing token",
             "model": HTTPErrorResponse,
         },
+        403: {
+            "description": "Forbidden - User account is not active",
+            "model": HTTPErrorResponse,
+        },
     },
 )
 async def enhance_user_profile(

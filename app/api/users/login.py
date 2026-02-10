@@ -102,6 +102,10 @@ async def login(login_data: UserLogin, db: AsyncSession = Depends(get_db)):
             "description": "Invalid or expired refresh token",
             "model": HTTPErrorResponse,
         },
+        403: {
+            "description": "User account is not active or deleted",
+            "model": HTTPErrorResponse,
+        },
     },
 )
 async def refresh_token(
@@ -130,7 +134,7 @@ async def refresh_token(
 
     if not user or not user.is_active or user.is_deleted:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="User account is not active or deleted",
         )
 

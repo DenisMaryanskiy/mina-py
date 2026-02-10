@@ -23,7 +23,7 @@ async def get_current_user(token: str, db: AsyncSession) -> User:
 
     if not user or not user.is_active or user.is_deleted:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="User account is not active or deleted",
         )
 
