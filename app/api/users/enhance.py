@@ -34,8 +34,8 @@ async def enhance_user_profile(
     """
     Enhance the user's profile with additional information.
 
-    - **full_name**: The user's full name to enhance the profile.
-    - **bio**: A short biography or description about the user.
+    - **avatar_url**: A URL to the user's avatar image.
+    - **status**: A short status message or bio for the user's profile.
 
     The endpoint will update the user's profile with the provided information and
     return the updated user data. If the token is invalid or the user account is
