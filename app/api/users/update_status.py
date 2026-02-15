@@ -6,16 +6,16 @@ from app.api.users.router import users_router
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, security
 from app.schemas.base import HTTPErrorResponse
-from app.schemas.users import UserProfileEnhance, UserResponse
+from app.schemas.users import UserResponse, UserUpdateStatus
 
 
 @users_router.post(
-    "/enhance",
+    "/status/update",
     response_model=UserResponse,
-    summary="Enhance user profile",
-    description="Enhance the user's profile with additional information.",
+    summary="Update user status",
+    description="Update user profile with a new status message.",
     responses={
-        200: {"description": "User profile enhanced successfully."},
+        200: {"description": "User profile status updated successfully."},
         401: {
             "description": "Unauthorized - Invalid or missing token",
             "model": HTTPErrorResponse,
@@ -27,14 +27,13 @@ from app.schemas.users import UserProfileEnhance, UserResponse
     },
 )
 async def enhance_user_profile(
-    enhance_data: UserProfileEnhance,
+    enhance_data: UserUpdateStatus,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Enhance the user's profile with additional information.
+    Update the user's profile status with additional information.
 
-    - **avatar_url**: A URL to the user's avatar image.
     - **status**: A short status message or bio for the user's profile.
 
     The endpoint will update the user's profile with the provided information and
@@ -43,7 +42,6 @@ async def enhance_user_profile(
     """
     user = await get_current_user(credentials.credentials, db)
 
-    user.avatar_url = enhance_data.avatar_url
     user.status = enhance_data.status
 
     await db.commit()

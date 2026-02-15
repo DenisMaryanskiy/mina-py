@@ -81,15 +81,9 @@ class UserCreate(UserBase):
     )
 
 
-class UserProfileEnhance(BaseModel):
+class UserUpdateStatus(BaseModel):
     """Schema for enhancing user profile."""
 
-    avatar_url: str | None = Field(
-        None,
-        max_length=255,
-        description="URL to the user's avatar image",
-        examples=["https://example.org/avatars/john_doe.png"],
-    )
     status: str | None = Field(
         None,
         max_length=500,
@@ -97,23 +91,8 @@ class UserProfileEnhance(BaseModel):
         examples=["Feeling happy today!"],
     )
 
-    @field_validator("avatar_url")
-    @classmethod
-    def validate_avatar_url(cls, v: str | None) -> str | None:
-        """Validate avatar URL format."""
-        if v is None:
-            return v
-        if not v.startswith(("http://", "https://")):
-            raise ValueError("Avatar URL must start with http:// or https://")
-        return v
-
     model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "avatar_url": "https://example.com/avatars/john.jpg",
-                "status": "Feeling happy today!",
-            }
-        }
+        json_schema_extra={"example": {"status": "Feeling happy today!"}}
     )
 
 

@@ -43,7 +43,7 @@ TestingSessionLocal = async_sessionmaker(
 
 @pytest_asyncio.fixture()
 async def test_session_engine():
-    """Фикстура для мока движка на всю сессию тестов"""
+    """Mock DB engine for testing."""
     engine = create_async_engine(TEST_DATABASE_URL)
     yield engine
     await engine.dispose()
@@ -74,7 +74,7 @@ async def async_session(test_session_engine: AsyncEngine):
 
 # === Dependency override ===
 @pytest_asyncio.fixture(autouse=True)
-async def override_get_db(async_session):
+async def override_get_db(async_session: AsyncSession):
     async def _get_db():
         yield async_session
 
@@ -164,7 +164,7 @@ def storage(minio_container: DockerContainer, test_bucket_name: str):
 
 
 @pytest.fixture
-def minio_client(minio_container):
+def minio_client(minio_container: DockerContainer) -> Minio:
     config = minio_container.config
     return Minio(
         config["endpoint"],
@@ -175,7 +175,7 @@ def minio_client(minio_container):
 
 
 @pytest.fixture
-def cleanup_bucket(storage, minio_client):
+def cleanup_bucket(storage: MinioStorage, minio_client: Minio):
     yield
 
     # Cleanup after test
@@ -188,7 +188,7 @@ def cleanup_bucket(storage, minio_client):
 
 
 @pytest.fixture
-def valid_jpeg_file():
+def valid_jpeg_file() -> UploadFile:
     img = Image.new("RGB", (200, 200), color="blue")
     img_bytes = io.BytesIO()
     img.save(img_bytes, format="JPEG")
@@ -198,7 +198,7 @@ def valid_jpeg_file():
 
 
 @pytest.fixture
-def valid_png_file():
+def valid_png_file() -> UploadFile:
     img = Image.new("RGBA", (150, 150), color="green")
     img_bytes = io.BytesIO()
     img.save(img_bytes, format="PNG")
@@ -208,7 +208,7 @@ def valid_png_file():
 
 
 @pytest.fixture
-def large_image_file():
+def large_image_file() -> UploadFile:
     img = Image.new("RGB", (25000, 25000), color="red")
     img_bytes = io.BytesIO()
     img.save(img_bytes, format="JPEG", quality=100)
@@ -228,7 +228,7 @@ def sample_image() -> io.BytesIO:
 
 
 @pytest.fixture
-def invalid_extension_file():
+def invalid_extension_file() -> UploadFile:
     content = b"fake image content"
     file_obj = io.BytesIO(content)
 
@@ -236,7 +236,7 @@ def invalid_extension_file():
 
 
 @pytest.fixture
-def corrupted_image_file():
+def corrupted_image_file() -> UploadFile:
     content = b"This is not a valid image file content"
     file_obj = io.BytesIO(content)
 
