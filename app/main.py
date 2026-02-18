@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 
 from app.api.users import users_router
+from app.api.websockets import ws_router
 from app.core.config import get_settings
 from app.core.exception import validation_exception_handler
 from app.core.lifespan import lifespan
@@ -28,3 +29,4 @@ app = FastAPI(
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
 app.include_router(users_router)
+app.include_router(ws_router)
