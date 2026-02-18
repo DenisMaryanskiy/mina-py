@@ -31,7 +31,7 @@ async def test_delete_avatar_success(
 def test_delete_avatar_S3Error_raises_exception(
     storage: MinioStorage, minio_client: Minio
 ):
-    with patch.object(storage.client, 'remove_object') as mock_remove:
+    with patch.object(storage.client, "remove_object") as mock_remove:
         mock_remove.side_effect = S3Error(
             code="NoSuchKey",
             message="Key does not exist",

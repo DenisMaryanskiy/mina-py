@@ -6,6 +6,7 @@ from fastapi.exceptions import RequestValidationError
 from app.api.users import users_router
 from app.core.config import get_settings
 from app.core.exception import validation_exception_handler
+from app.core.lifespan import lifespan
 
 os.environ.setdefault("ENVIRONMENT", os.getenv("ENVIRONMENT", "dev"))
 settings = get_settings()  # Load settings based on the environment
@@ -21,6 +22,7 @@ app = FastAPI(
     version="0.1.0",
     openapi_version="3.1.0",
     root_path="/api/v1",
+    lifespan=lifespan,
 )
 
 app.add_exception_handler(RequestValidationError, validation_exception_handler)

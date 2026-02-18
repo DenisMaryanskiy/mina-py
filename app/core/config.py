@@ -46,6 +46,26 @@ class Settings(BaseSettings):
     MAX_IMAGE_SIZE_MB: str = "5"
     ALLOWED_EXTENSIONS: set = {".jpg", ".jpeg", ".png", ".webp"}
 
+    # Redis settings
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
+    REDIS_DB: int = 0
+    REDIS_PASSWORD: str | None = None
+    REDIS_POOL_SIZE: int = 10
+    REDIS_DECODE_RESPONSES: bool = True
+
+    # RabbitMQ settings
+    RABBITMQ_HOST: str = "localhost"
+    RABBITMQ_PORT: int = 5672
+    RABBITMQ_USER: str = "guest"
+    RABBITMQ_PASS: str = "guest"
+    RABBITMQ_VHOST: str = "/"
+
+    # WebSocket settings
+    WS_HEARTBEAT_INTERVAL: int = 30  # seconds
+    WS_HEARTBEAT_TIMEOUT: int = 60  # seconds
+    WS_MESSAGE_MAX_SIZE: int = 1024 * 1024  # 1MB
+
     # Other settings
     ENVIRONMENT: str = "dev"  # dev or prod
 
