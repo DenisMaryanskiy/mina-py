@@ -40,7 +40,6 @@ async def test_listener_loop_receives_and_processes_message(
     mock_redis: AsyncMock,
     mock_websocket: AsyncMock,
 ):
-
     message = {
         "type": "message",
         "channel": "presence",

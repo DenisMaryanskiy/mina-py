@@ -3,7 +3,7 @@ import os
 import secrets
 import time
 import uuid
-from unittest.mock import Mock
+from unittest.mock import MagicMock, Mock
 
 import faker
 import pytest
@@ -246,6 +246,14 @@ def corrupted_image_file() -> UploadFile:
 @pytest.fixture
 def test_user_uuid():
     return uuid.UUID("12345678-1234-5678-1234-567812345678")
+
+
+@pytest.fixture
+def mock_logger():
+    logger = MagicMock()
+    logger.info = MagicMock()
+    logger.error = MagicMock()
+    return logger
 
 
 f = faker.Faker()
