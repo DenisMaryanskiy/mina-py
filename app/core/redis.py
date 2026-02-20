@@ -51,7 +51,7 @@ class RedisClient:
             if self.redis:
                 return await self.redis.get(key)
             else:
-                raise
+                return None
         except Exception as e:
             self.logger.error(f"Redis GET error for key {key}: {e}")
             return None
@@ -64,7 +64,7 @@ class RedisClient:
                     return await self.redis.setex(key, ttl, value)
                 return await self.redis.set(key, value)
             else:
-                raise
+                return False
         except Exception as e:
             self.logger.error(f"Redis SET error for key {key}: {e}")
             return False
@@ -75,7 +75,7 @@ class RedisClient:
             if self.redis:
                 return await self.redis.delete(key) > 0
             else:
-                raise
+                return 0
         except Exception as e:
             self.logger.error(f"Redis DELETE error for key {key}: {e}")
             return 0
@@ -86,7 +86,7 @@ class RedisClient:
             if self.redis:
                 return await self.redis.exists(key) > 0
             else:
-                raise
+                return False
         except Exception as e:
             self.logger.error(f"Redis EXISTS error for key {key}: {e}")
             return False
@@ -97,7 +97,7 @@ class RedisClient:
             if self.redis:
                 return await self.redis.expire(key, ttl)
             else:
-                raise
+                return False
         except Exception as e:
             self.logger.error(f"Redis EXPIRE error for key {key}: {e}")
             return False
@@ -110,7 +110,7 @@ class RedisClient:
             if self.redis:
                 return await self.redis.hget(name, key)
             else:
-                raise
+                return None
         except Exception as e:
             self.logger.error(f"Redis HGET error for {name}:{key}: {e}")
             return None
@@ -121,7 +121,7 @@ class RedisClient:
             if self.redis:
                 return await self.redis.hset(name, key, value) > 0
             else:
-                raise
+                return False
         except Exception as e:
             self.logger.error(f"Redis HSET error for {name}:{key}: {e}")
             return False
@@ -132,7 +132,7 @@ class RedisClient:
             if self.redis:
                 return await self.redis.hgetall(name)
             else:
-                raise
+                return {}
         except Exception as e:
             self.logger.error(f"Redis HGETALL error for {name}: {e}")
             return {}
@@ -143,7 +143,7 @@ class RedisClient:
             if self.redis:
                 return await self.redis.hdel(name, *keys) > 0
             else:
-                raise
+                return 0
         except Exception as e:
             self.logger.error(f"Redis HDEL error for {name}: {e}")
             return 0
@@ -156,7 +156,7 @@ class RedisClient:
             if self.redis:
                 return await self.redis.sadd(key, *values)
             else:
-                raise
+                return 0
         except Exception as e:
             self.logger.error(f"Redis SADD error for {key}: {e}")
             return 0
@@ -167,7 +167,7 @@ class RedisClient:
             if self.redis:
                 return await self.redis.srem(key, *values)
             else:
-                raise
+                return 0
         except Exception as e:
             self.logger.error(f"Redis SREM error for {key}: {e}")
             return 0
@@ -178,7 +178,7 @@ class RedisClient:
             if self.redis:
                 return await self.redis.smembers(key)
             else:
-                raise
+                return set()
         except Exception as e:
             self.logger.error(f"Redis SMEMBERS error for {key}: {e}")
             return set()
@@ -189,7 +189,7 @@ class RedisClient:
             if self.redis:
                 return await self.redis.sismember(key, value)
             else:
-                raise
+                return False
         except Exception as e:
             self.logger.error(f"Redis SISMEMBER error for {key}: {e}")
             return False
@@ -204,7 +204,7 @@ class RedisClient:
                     message = json.dumps(message)
                 return await self.redis.publish(channel, message)
             else:
-                raise
+                return 0
         except Exception as e:
             self.logger.error(f"Redis PUBLISH error for channel {channel}: {e}")
             return 0
@@ -218,12 +218,12 @@ class RedisClient:
                 await self.pubsub.subscribe(*channels)
                 self.logger.info(f"Subscribed to Redis channels: {channels}")
             else:
-                raise
+                return None
         except Exception as e:
             self.logger.error(
                 f"Redis SUBSCRIBE error for channels {channels}: {e}"
             )
-            raise
+            return None
 
     async def unsubscribe(self, *channels: str):
         """Unsubscribe from Redis channels."""
