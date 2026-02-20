@@ -1,13 +1,24 @@
 import faker
+import pytest
 import pytest_asyncio
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.security import hash_password
+from app.core.security import create_access_token, hash_password
 from app.models.users import User
 from app.schemas.users import LoginResponse
 
 f = faker.Faker()
+
+
+@pytest.fixture
+def test_user_id() -> str:
+    return "123e4567-e89b-12d3-a456-426614174000"
+
+
+@pytest.fixture
+def test_token(test_user_id: str) -> str:
+    return create_access_token(test_user_id)
 
 
 # === Seed entities for API and utils tests ===
