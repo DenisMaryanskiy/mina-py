@@ -7,12 +7,12 @@ from app.api.users.router import users_router
 from app.core.database import get_db
 from app.core.email import get_mailer_config, prepare_message
 from app.models.users import User
-from app.schemas.base import HTTPErrorResponse, MessageResponse
+from app.schemas.base import GenericMessageResponse, HTTPErrorResponse
 
 
 @users_router.post(
     "/resend-activation",
-    response_model=MessageResponse,
+    response_model=GenericMessageResponse,
     status_code=status.HTTP_200_OK,
     summary="Resend account activation email",
     description="""Resend the activation email to a user who
@@ -20,7 +20,7 @@ from app.schemas.base import HTTPErrorResponse, MessageResponse
     responses={
         200: {
             "description": "Activation email resent successfully.",
-            "model": MessageResponse,
+            "model": GenericMessageResponse,
         },
         400: {
             "description": ("Invalid username or account already activated."),
@@ -32,7 +32,7 @@ async def resend_activation_email(
     username: str,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
-) -> MessageResponse:
+) -> GenericMessageResponse:
     """
     Resend the activation email to a user who has not activated their account.
 
@@ -61,6 +61,6 @@ async def resend_activation_email(
 
     background_tasks.add_task(fm.send_message, message)
 
-    return MessageResponse(
+    return GenericMessageResponse(
         message="Activation email has been resent. Please check your inbox."
     )

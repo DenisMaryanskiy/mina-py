@@ -6,13 +6,13 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.conversations.helpers import require_participant
 from app.api.conversations.router import conversations_router
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, security
 from app.models.conversations import Conversation
 from app.schemas.base import HTTPErrorResponse
 from app.schemas.conversations import ConversationResponse
+from app.utils.require_participant import require_participant
 
 
 @conversations_router.get(

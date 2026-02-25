@@ -5,15 +5,15 @@ from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.conversations.helpers import require_participant
 from app.api.conversations.router import conversations_router
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, security
 from app.models.conversation_participants import ConversationParticipant
 from app.models.conversations import Conversation
 from app.models.users import User
-from app.schemas.base import HTTPErrorResponse, MessageResponse
+from app.schemas.base import GenericMessageResponse, HTTPErrorResponse
 from app.schemas.participants import AddParticipantsRequest, ParticipantResponse
+from app.utils.require_participant import require_participant
 
 
 @conversations_router.post(
@@ -95,7 +95,7 @@ async def add_participants(
 
 @conversations_router.delete(
     "/{conversation_id}/participants/{user_id}",
-    response_model=MessageResponse,
+    response_model=GenericMessageResponse,
     summary="Remove a participant from a group conversation",
     responses={
         400: {"description": "Bad request", "model": HTTPErrorResponse},
@@ -109,7 +109,7 @@ async def remove_participant(
     user_id: UUID,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: AsyncSession = Depends(get_db),
-) -> MessageResponse:
+) -> GenericMessageResponse:
     """
     Remove a participant.
     Admins can remove anyone; members can only remove themselves.
@@ -151,4 +151,4 @@ async def remove_participant(
 
     await db.delete(target)
     await db.commit()
-    return MessageResponse(message="Participant removed successfully.")
+    return GenericMessageResponse(message="Participant removed successfully.")

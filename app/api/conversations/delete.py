@@ -5,17 +5,17 @@ from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.conversations.helpers import require_participant
 from app.api.conversations.router import conversations_router
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, security
 from app.models.conversations import Conversation
-from app.schemas.base import HTTPErrorResponse, MessageResponse
+from app.schemas.base import GenericMessageResponse, HTTPErrorResponse
+from app.utils.require_participant import require_participant
 
 
 @conversations_router.delete(
     "/{conversation_id}",
-    response_model=MessageResponse,
+    response_model=GenericMessageResponse,
     summary="Leave or delete a conversation",
     responses={
         401: {"description": "Unauthorized", "model": HTTPErrorResponse},
@@ -27,7 +27,7 @@ async def delete_or_leave_conversation(
     conversation_id: UUID,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: AsyncSession = Depends(get_db),
-) -> MessageResponse:
+) -> GenericMessageResponse:
     """
     Leave a conversation. If the user is the creator and it's a group,
     the conversation is deleted. For direct conversations, the user just leaves.
@@ -50,9 +50,11 @@ async def delete_or_leave_conversation(
         # Creator deletes the whole conversation
         await db.delete(conv)
         await db.commit()
-        return MessageResponse(message="Conversation deleted successfully.")
+        return GenericMessageResponse(
+            message="Conversation deleted successfully."
+        )
     else:
         # Other participants just leave
         await db.delete(participant)
         await db.commit()
-        return MessageResponse(message="Left conversation successfully.")
+        return GenericMessageResponse(message="Left conversation successfully.")

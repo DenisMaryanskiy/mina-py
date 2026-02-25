@@ -1,7 +1,7 @@
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class MessageResponse(BaseModel):
+class GenericMessageResponse(BaseModel):
     """Generic message response."""
 
     message: str = Field(..., description="Response message")

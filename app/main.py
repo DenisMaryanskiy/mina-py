@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 
 from app.api.conversations import conversations_router
+from app.api.messages import messages_router
 from app.api.users import users_router
 from app.api.websockets import ws_router
 from app.core.config import get_settings
@@ -32,3 +33,4 @@ app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.include_router(users_router)
 app.include_router(ws_router)
 app.include_router(conversations_router)
+app.include_router(messages_router)

@@ -5,19 +5,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.users.router import users_router
 from app.core.database import get_db
 from app.models.users import User
-from app.schemas.base import HTTPErrorResponse, MessageResponse
+from app.schemas.base import GenericMessageResponse, HTTPErrorResponse
 
 
 @users_router.get(
     "/activate/{activation_token}",
     status_code=status.HTTP_200_OK,
-    response_model=MessageResponse,
+    response_model=GenericMessageResponse,
     summary="Activate a user account",
     description="Activate a user account using the provided activation token.",
     responses={
         200: {
             "description": "User activated successfully.",
-            "model": MessageResponse,
+            "model": GenericMessageResponse,
         },
         400: {
             "description": (
@@ -29,7 +29,7 @@ from app.schemas.base import HTTPErrorResponse, MessageResponse
 )
 async def activate_user(
     activation_token: str, db: AsyncSession = Depends(get_db)
-) -> MessageResponse:
+) -> GenericMessageResponse:
     """
     Activate a user account using the provided activation token.
     - **activation_token**: The token sent to the user for account activation.
@@ -58,4 +58,4 @@ async def activate_user(
     await db.commit()
     await db.refresh(user)
 
-    return MessageResponse(message="Account activated successfully.")
+    return GenericMessageResponse(message="Account activated successfully.")
