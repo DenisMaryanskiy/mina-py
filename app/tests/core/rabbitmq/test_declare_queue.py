@@ -64,6 +64,6 @@ async def test_declare_queue_with_dlq(
     mock_dlq.bind.assert_called_once_with(mock_dlx, routing_key="test_queue")
 
     main_queue_call = mock_channel.declare_queue.call_args_list[1]
-    queue_args = main_queue_call[1]['arguments']
-    assert queue_args['x-dead-letter-exchange'] == "test_queue.dlx"
-    assert queue_args['x-dead-letter-routing-key'] == "test_queue"
+    queue_args = main_queue_call[1]["arguments"]
+    assert queue_args["x-dead-letter-exchange"] == "test_queue.dlx"
+    assert queue_args["x-dead-letter-routing-key"] == "test_queue"

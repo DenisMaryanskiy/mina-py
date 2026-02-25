@@ -128,7 +128,7 @@ def upgrade() -> None:
             server_default=sa.text('now()'),
             nullable=False,
         ),
-        sa.Column('last_read_message_id', sa.UUID(), nullable=False),
+        sa.Column('last_read_message_id', sa.UUID(), nullable=True),
         sa.Column('muted_until', sa.DateTime(timezone=True), nullable=True),
         sa.Column(
             'notification_settings',

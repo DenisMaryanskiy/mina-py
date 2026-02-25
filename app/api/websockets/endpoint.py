@@ -102,7 +102,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
     finally:
         if connection_id and user_id:
-            if 'heartbeat_task' in locals():
+            if "heartbeat_task" in locals():
                 heartbeat_task.cancel()
                 try:
                     await heartbeat_task

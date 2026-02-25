@@ -10,7 +10,7 @@ from app.core.redis import RedisClient
 async def test_connect_success():
     client = RedisClient()
 
-    with patch('redis.asyncio.Redis') as mock_redis_class:
+    with patch("redis.asyncio.Redis") as mock_redis_class:
         mock_instance = AsyncMock(spec=Redis)
         mock_instance.ping = AsyncMock(return_value=True)
         mock_redis_class.return_value = mock_instance
@@ -25,7 +25,7 @@ async def test_connect_success():
 async def test_connect_error(mock_logger: AsyncMock):
     client = RedisClient()
 
-    with patch('redis.asyncio.Redis') as mock_redis_class:
+    with patch("redis.asyncio.Redis") as mock_redis_class:
         mock_instance = AsyncMock(spec=Redis)
         mock_instance.ping = AsyncMock(
             side_effect=Exception("Connection failed!")

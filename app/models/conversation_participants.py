@@ -50,7 +50,7 @@ class ConversationParticipant(Base, TimestampMixin):
     last_read_message_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("messages.id", ondelete="SET NULL"),
-        nullable=False,
+        nullable=True,
     )
 
     muted_until: Mapped[DateTime | None] = mapped_column(
