@@ -37,6 +37,14 @@ class ConnectionManager:
         # Redis pub/sub for cross-server communication
         self.pubsub_task: asyncio.Task | None = None
 
+        # Typing debounce: {(conv_id, user_id): last_typing_event_time}
+        # Prevents broadcasting "is_typing=True" more than once per 3 seconds.
+        self._typing_last_sent: dict[tuple[str, str], datetime] = {}
+
+        # Map connection_id -> user_id
+        # (needed for away detection and pub/sub routing)
+        self.connection_user: dict[str, str] = {}
+
     # ================ Connection management ================
 
     async def connect(
@@ -63,6 +71,7 @@ class ConnectionManager:
         # Store connections locally
         self.active_connections[connection_id] = websocket
         self.heartbeat[connection_id] = datetime.now(timezone.utc)
+        self.connection_user[connection_id] = user_id
 
         # Track connection in Redis
         await self._add_user_connection(user_id, connection_id)
@@ -100,6 +109,9 @@ class ConnectionManager:
         if connection_id in self.heartbeat:
             del self.heartbeat[connection_id]
 
+        if connection_id in self.connection_user:
+            del self.connection_user[connection_id]
+
         # Remove from Redis
         await self._remove_user_connection(user_id, connection_id)
 
@@ -128,21 +140,40 @@ class ConnectionManager:
             return True
         return False
 
-    async def check_stale_connections(self, timeout_seconds: int = 60):
+    async def check_stale_connections(
+        self, timeout_seconds: int = 60, away_threshold_seconds: int = 30
+    ):
         """
-        Check for connections that haven't sent heartbeat and close them.
+        Check for connections that haven't sent a heartbeat and handle them:
+
+        - After away_threshold_seconds without a heartbeat the user is
+          marked as **away** and a presence_update event is broadcast.
+        - After timeout_seconds the WebSocket is closed and the user is
+          marked as **offline**.
 
         :param timeout_seconds: Seconds without heartbeat before disconnect
+        :param away_threshold_seconds: Seconds without heartbeat
+        before marking away
         """
         now = datetime.now(timezone.utc)
         stale_connections = []
+        away_connections = []
 
         for connection_id, last_heartbeat in self.heartbeat.items():
             elapsed = (now - last_heartbeat).total_seconds()
             if elapsed > timeout_seconds:
-                stale_connections.append(connection_id)
+                stale_connections.append((connection_id, elapsed))
+            elif elapsed > away_threshold_seconds:
+                away_connections.append(connection_id)
 
-        for connection_id in stale_connections:
+        # Mark away users
+        for connection_id in away_connections:
+            user_id = self.connection_user.get(connection_id)
+            if user_id:
+                await self.set_user_away(user_id)
+
+        # Close timed-out connections
+        for connection_id, elapsed in stale_connections:
             if connection_id in self.active_connections:
                 try:
                     websocket = self.active_connections[connection_id]
@@ -155,6 +186,7 @@ class ConnectionManager:
                 # Clean up
                 del self.active_connections[connection_id]
                 del self.heartbeat[connection_id]
+                self.connection_user.pop(connection_id, None)
 
                 self.logger.warning(
                     f"Closed stale connection: {connection_id} "
@@ -210,51 +242,90 @@ class ConnectionManager:
 
     # ================ User presence ================
 
-    async def set_user_online(self, user_id: str):
-        """Mark user as online in Redis"""
-        await self.redis.hset(f"user:presence:{user_id}", "status", "online")
-        await self.redis.hset(
-            f"user:presence:{user_id}",
-            "last_seen",
-            datetime.now(timezone.utc).isoformat(),
-        )
-        await self.redis.expire(f"user:presence:{user_id}", 3600)  # 1 hour TTL
-
-        # Broadcast presence update
+    async def _broadcast_presence_update(
+        self, user_id: str, status: str, last_seen: str
+    ):
+        """
+        Publish a standardised ``presence_update`` event to the ``presence``
+        Redis channel so every server instance can forward it to their local
+        WebSocket clients.
+        """
         await self.redis.publish(
             "presence",
             {
-                "type": "user_online",
+                "type": "presence_update",
                 "user_id": user_id,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "status": status,
+                "last_seen": last_seen,
             },
         )
+
+    async def set_user_online(self, user_id: str):
+        """Mark user as online in Redis and broadcast presence_update."""
+        now = datetime.now(timezone.utc).isoformat()
+        key = f"user:presence:{user_id}"
+
+        await self.redis.hset(key, "status", "online")
+        await self.redis.hset(key, "last_seen", now)
+        await self.redis.expire(key, 3600)  # 1 hour TTL
+
+        await self._broadcast_presence_update(user_id, "online", now)
 
     async def set_user_offline(self, user_id: str):
-        """Mark user as offline in Redis"""
-        await self.redis.hset(f"user:presence:{user_id}", "status", "offline")
-        await self.redis.hset(
-            f"user:presence:{user_id}",
-            "last_seen",
-            datetime.now(timezone.utc).isoformat(),
-        )
+        """Mark user as offline in Redis and broadcast presence_update."""
+        now = datetime.now(timezone.utc).isoformat()
+        key = f"user:presence:{user_id}"
 
-        # Broadcast presence update
-        await self.redis.publish(
-            "presence",
-            {
-                "type": "user_offline",
-                "user_id": user_id,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            },
-        )
+        await self.redis.hset(key, "status", "offline")
+        await self.redis.hset(key, "last_seen", now)
+        # Keep offline presence for 24 h so clients can see last_seen
+        await self.redis.expire(key, 86400)
+
+        await self._broadcast_presence_update(user_id, "offline", now)
+
+    async def set_user_away(self, user_id: str):
+        """
+        Mark user as away in Redis and broadcast presence_update.
+
+        Called automatically when the client has not sent a heartbeat for an
+        extended period but the connection is still technically open.
+        """
+        now = datetime.now(timezone.utc).isoformat()
+        key = f"user:presence:{user_id}"
+
+        await self.redis.hset(key, "status", "away")
+        await self.redis.hset(key, "last_seen", now)
+        await self.redis.expire(key, 3600)
+
+        await self._broadcast_presence_update(user_id, "away", now)
 
     async def get_user_presence(self, user_id: str) -> dict[str, Any]:
-        """Get user presence status from Redis"""
+        """Get user presence status from Redis."""
         presence = await self.redis.hgetall(f"user:presence:{user_id}")
         if not presence:
             return {"status": "offline", "last_seen": None}
         return presence
+
+    async def get_bulk_presence(
+        self, user_ids: list[str]
+    ) -> list[dict[str, Any]]:
+        """
+        Return presence data for multiple users at once.
+
+        :param user_ids: List of user ID strings
+        :return: List of presence dicts, one per user_id
+        """
+        results = []
+        for user_id in user_ids:
+            presence = await self.get_user_presence(user_id)
+            results.append(
+                {
+                    "user_id": user_id,
+                    "status": presence.get("status", "offline"),
+                    "last_seen": presence.get("last_seen"),
+                }
+            )
+        return results
 
     async def set_typing_status(
         self, conversation_id: str, user_id: str, is_typing: bool
@@ -262,26 +333,35 @@ class ConnectionManager:
         """
         Update typing status for user in conversation.
 
+        When ``is_typing`` is ``True``:
+          - Records the timestamp in Redis hash with a 5-second TTL.
+          - Broadcasts a ``typing`` event to all conversation participants
+            except the sender.
+
+        When ``is_typing`` is ``False``:
+          - Removes the user's entry from the typing hash.
+          - Broadcasts the stop-typing event.
+
         :param conversation_id: Conversation ID
         :param user_id: User ID
-        :param is_typing: True if user is typing
+        :param is_typing: True if user is currently typing
         """
         key = f"conversation:typing:{conversation_id}"
         now = datetime.now(timezone.utc).isoformat()
 
         if is_typing:
-            # Set typing status with 5 second TTL
+            # Store timestamp; Redis TTL auto-expires after 5 s of inactivity
             await self.redis.hset(key, user_id, now)
             await self.redis.expire(key, 5)
         else:
-            # Remove typing status
             await self.redis.hdel(key, user_id)
 
-        # Broadcast typing status
+        # Broadcast typing event to conversation participants
         await self.broadcast_to_conversation(
             conversation_id,
             {
                 "type": "typing",
+                "conversation_id": conversation_id,
                 "user_id": user_id,
                 "is_typing": is_typing,
                 "timestamp": now,

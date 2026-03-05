@@ -95,3 +95,38 @@ async def test_check_stale_connections_error(
     assert connection_id not in connection_manager.heartbeat
 
     assert mock_logger.error.called
+
+
+@pytest.mark.asyncio
+async def test_check_stale_marks_user_away(
+    connection_manager: ConnectionManager,
+    mock_redis: AsyncMock,
+    mock_websocket: AsyncMock,
+):
+    user_id = "user-away"
+    connection_id = "conn-away"
+
+    connection_manager.active_connections[connection_id] = mock_websocket
+    connection_manager.connection_user[connection_id] = user_id
+    # Last heartbeat was 40 seconds ago (past 30-s away threshold)
+    connection_manager.heartbeat[connection_id] = datetime.now(
+        timezone.utc
+    ) - timedelta(seconds=40)
+
+    await connection_manager.check_stale_connections(
+        timeout_seconds=60, away_threshold_seconds=30
+    )
+
+    # User should NOT be disconnected
+    mock_websocket.close.assert_not_called()
+    assert connection_id in connection_manager.active_connections
+
+    # But must have received an "away" presence_update broadcast
+    mock_redis.publish.assert_called()
+    calls_payloads = [c.args[1] for c in mock_redis.publish.call_args_list]
+    away_events = [
+        p
+        for p in calls_payloads
+        if isinstance(p, dict) and p.get("status") == "away"
+    ]
+    assert len(away_events) == 1
