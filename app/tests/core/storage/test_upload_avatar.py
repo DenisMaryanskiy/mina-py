@@ -4,12 +4,12 @@ import pytest
 from fastapi import HTTPException, UploadFile
 from minio import Minio, S3Error
 
-from app.core.storage import MinioStorage
+from app.core.storage import AvatarStorage
 
 
 @pytest.mark.asyncio
 async def test_upload_avatar_success(
-    storage: MinioStorage,
+    storage: AvatarStorage,
     valid_jpeg_file: UploadFile,
     test_user_uuid: uuid.UUID,
     minio_client: Minio,
@@ -30,7 +30,7 @@ async def test_upload_avatar_success(
 
 @pytest.mark.asyncio
 async def test_upload_avatar_S3Error_raises_exception(
-    storage: MinioStorage,
+    storage: AvatarStorage,
     valid_jpeg_file: UploadFile,
     test_user_uuid: uuid.UUID,
     minio_client: Minio,

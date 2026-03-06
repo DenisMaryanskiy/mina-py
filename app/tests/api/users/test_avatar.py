@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 from httpx import AsyncClient
 
-from app.core.storage import MinioStorage
+from app.core.storage import AvatarStorage
 from app.schemas.users import LoginResponse
 
 
@@ -12,10 +12,10 @@ from app.schemas.users import LoginResponse
 async def test_avatar_upload_success(
     async_client: AsyncClient,
     login_user: LoginResponse,
-    storage: MinioStorage,
+    storage: AvatarStorage,
     sample_image: BytesIO,
 ):
-    with patch("app.api.users.avatar.minio_storage", storage):
+    with patch("app.api.users.avatar.avatar_storage", storage):
         files = {"file": ("avatar.jpg", sample_image, "image/jpeg")}
 
         response = await async_client.post(
@@ -32,10 +32,10 @@ async def test_avatar_upload_success(
 async def test_delete_avatar_success(
     async_client: AsyncClient,
     login_user: LoginResponse,
-    storage: MinioStorage,
+    storage: AvatarStorage,
     sample_image: BytesIO,
 ):
-    with patch("app.api.users.avatar.minio_storage", storage):
+    with patch("app.api.users.avatar.avatar_storage", storage):
         files = {"file": ("avatar.jpg", sample_image, "image/jpeg")}
         upload_response = await async_client.post(
             "/api/v1/users/avatar/upload",
@@ -63,7 +63,7 @@ async def test_delete_avatar_storage_exception_raises_500(
     Test that delete_avatar raises 500 when MinIO delete raises an exception.
     This tests the case where delete_avatar itself throws an error.
     """
-    mock_storage = Mock(spec=MinioStorage)
+    mock_storage = Mock(spec=AvatarStorage)
 
     mock_storage.upload_avatar = AsyncMock(
         return_value="http://localhost:9000/avatars/user/avatar.jpg"
@@ -71,7 +71,7 @@ async def test_delete_avatar_storage_exception_raises_500(
 
     mock_storage.delete_avatar = Mock(return_value=False)
 
-    with patch("app.api.users.avatar.minio_storage", mock_storage):
+    with patch("app.api.users.avatar.avatar_storage", mock_storage):
         files = {"file": ("avatar.jpg", sample_image, "image/jpeg")}
         upload_response = await async_client.post(
             "/api/v1/users/avatar/upload",

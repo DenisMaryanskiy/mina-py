@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 
 from app.api.conversations import conversations_router
+from app.api.media import media_router
 from app.api.messages import messages_router
 from app.api.users import users_router
 from app.api.websockets import ws_router
@@ -34,3 +35,4 @@ app.include_router(users_router)
 app.include_router(ws_router)
 app.include_router(conversations_router)
 app.include_router(messages_router)
+app.include_router(media_router)

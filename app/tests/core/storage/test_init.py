@@ -3,11 +3,11 @@ import json
 import pytest
 from minio import Minio, S3Error
 
-from app.core.storage import MinioStorage
+from app.core.storage import AvatarStorage
 
 
-def test_minio_storage_initialization(
-    storage: MinioStorage, minio_client: Minio, test_bucket_name: str
+def test_avatar_storage_initialization(
+    storage: AvatarStorage, minio_client: Minio, test_bucket_name: str
 ):
     assert storage.bucket_name == test_bucket_name
     assert storage.client is not None
@@ -16,14 +16,14 @@ def test_minio_storage_initialization(
 
 
 def test_bucket_exists_after_initialization(
-    storage: MinioStorage, minio_client: Minio
+    storage: AvatarStorage, minio_client: Minio
 ):
     exists = minio_client.bucket_exists(storage.bucket_name)
     assert exists is True
 
 
 def test_bucket_has_public_read_policy(
-    storage: MinioStorage, minio_client: Minio
+    storage: AvatarStorage, minio_client: Minio
 ):
     policy_str = minio_client.get_bucket_policy(storage.bucket_name)
     policy = json.loads(policy_str)
@@ -35,7 +35,7 @@ def test_bucket_has_public_read_policy(
 
 
 def test_ensure_bucket_exists_S3Error_raises_exception(
-    storage: MinioStorage, minio_client: Minio, monkeypatch: pytest.MonkeyPatch
+    storage: AvatarStorage, minio_client: Minio, monkeypatch: pytest.MonkeyPatch
 ):
     def mock_bucket_exists(bucket_name):
         raise S3Error(
@@ -50,4 +50,4 @@ def test_ensure_bucket_exists_S3Error_raises_exception(
     monkeypatch.setattr(storage.client, "bucket_exists", mock_bucket_exists)
 
     with pytest.raises(S3Error):
-        storage._ensure_bucket_exists()
+        storage._ensure_bucket_exists(storage.bucket_name)

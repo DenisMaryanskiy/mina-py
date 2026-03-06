@@ -57,3 +57,9 @@ class Message(Base, TimestampMixin, IsDeletedMixin):
     )
 
     conversation = relationship("Conversation", back_populates="messages")
+    attachments = relationship(
+        "MessageAttachment",
+        back_populates="message",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )

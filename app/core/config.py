@@ -39,12 +39,38 @@ class Settings(BaseSettings):
     MINIO_ACCESS_KEY: str = "minio_access_key"
     MINIO_SECRET_KEY: str = "minio_secret_key"
     MINIO_BUCKET_NAME: str = "avatars"
+    MEDIA_BUCKET_NAME: str = "attachments"
     MINIO_SECURE: bool = False  # Set to True if using HTTPS
     MINIO_REGION: str = "eu-west-1"
 
     # Image upload settings
     MAX_IMAGE_SIZE_MB: str = "5"
     ALLOWED_EXTENSIONS: set = {".jpg", ".jpeg", ".png", ".webp"}
+
+    MAX_FILE_SIZE_MB: int = 100
+    ALLOWED_FILE_TYPES: list = [
+        "image/jpeg",
+        "image/png",
+        "image/gif",
+        "image/webp",
+        "video/mp4",
+        "video/webm",
+        "video/quicktime",
+        "audio/mpeg",
+        "audio/ogg",
+        "audio/wav",
+        "audio/webm",
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "text/plain",
+    ]
+    ENABLE_VIRUS_SCAN: bool = False
+    IMAGE_COMPRESSION_QUALITY: int = 85
+    VIDEO_MAX_RESOLUTION: str = "1080p"
+    CHUNK_SIZE_MB: int = 5
 
     # Redis settings
     REDIS_HOST: str = "localhost"

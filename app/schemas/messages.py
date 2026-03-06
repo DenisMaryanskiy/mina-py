@@ -4,6 +4,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from app.schemas.attachments import AttachmentResponse
+
 MESSAGE_TYPES = Literal["text", "image", "video", "audio", "file", "system"]
 
 
@@ -105,6 +107,10 @@ class MessageResponse(BaseModel):
         ..., description="Timestamp when the message was sent"
     )
     updated_at: datetime = Field(..., description="Timestamp of the last update")
+    attachments: list[AttachmentResponse] = Field(
+        default_factory=list,
+        description="Media and file attachments for this message",
+    )
 
     model_config = ConfigDict(
         from_attributes=True,

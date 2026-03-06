@@ -25,7 +25,7 @@ from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.logger import get_logger
 from app.core.security import hash_password
-from app.core.storage import MinioStorage
+from app.core.storage import AvatarStorage
 from app.main import app
 from app.models.users import User
 
@@ -160,7 +160,7 @@ def storage(minio_container: DockerContainer, test_bucket_name: str):
 
     mock_logger = Mock()
 
-    return MinioStorage(settings=mock_settings, logger=mock_logger)
+    return AvatarStorage(settings=mock_settings, logger=mock_logger)
 
 
 @pytest.fixture
@@ -175,7 +175,7 @@ def minio_client(minio_container: DockerContainer) -> Minio:
 
 
 @pytest.fixture
-def cleanup_bucket(storage: MinioStorage, minio_client: Minio):
+def cleanup_bucket(storage: AvatarStorage, minio_client: Minio):
     yield
 
     # Cleanup after test

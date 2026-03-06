@@ -1,10 +1,10 @@
-from app.core.storage import MinioStorage
+from app.core.storage import AvatarStorage
 
 
-def test_get_public_url_with_http(storage: MinioStorage):
+def test_get_public_url_with_http(storage: AvatarStorage):
     object_name = "user123/avatar.jpg"
 
-    url = storage._get_public_url(object_name)
+    url = storage._get_public_url(storage.bucket_name, object_name)
 
     assert url.startswith("http://")
     assert storage.bucket_name in url

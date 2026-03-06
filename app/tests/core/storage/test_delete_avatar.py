@@ -5,12 +5,12 @@ import pytest
 from fastapi import UploadFile
 from minio import Minio, S3Error
 
-from app.core.storage import MinioStorage
+from app.core.storage import AvatarStorage
 
 
 @pytest.mark.asyncio
 async def test_delete_avatar_success(
-    storage: MinioStorage,
+    storage: AvatarStorage,
     valid_jpeg_file: UploadFile,
     test_user_uuid: uuid.UUID,
     minio_client: Minio,
@@ -29,7 +29,7 @@ async def test_delete_avatar_success(
 
 
 def test_delete_avatar_S3Error_raises_exception(
-    storage: MinioStorage, minio_client: Minio
+    storage: AvatarStorage, minio_client: Minio
 ):
     with patch.object(storage.client, "remove_object") as mock_remove:
         mock_remove.side_effect = S3Error(

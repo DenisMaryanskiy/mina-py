@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.users.router import users_router
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, security
-from app.core.storage import minio_storage
+from app.core.storage import avatar_storage
 from app.schemas.base import HTTPErrorResponse
 from app.schemas.users import UserResponse
 
@@ -42,7 +42,7 @@ async def upload_avatar(
 ):
     user = await get_current_user(credentials.credentials, db)
 
-    avatar_url = await minio_storage.upload_avatar(file, user.id)
+    avatar_url = await avatar_storage.upload_avatar(file, user.id)
 
     user.avatar_url = avatar_url
     await db.commit()
@@ -79,7 +79,7 @@ async def delete_avatar(
     user = await get_current_user(credentials.credentials, db)
 
     if user.avatar_url:
-        success = minio_storage.delete_avatar(user.avatar_url)
+        success = avatar_storage.delete_avatar(user.avatar_url)
         if success:
             user.avatar_url = None
             await db.commit()

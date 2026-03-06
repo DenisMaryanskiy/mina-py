@@ -1,11 +1,11 @@
 import pytest
 from fastapi import HTTPException, UploadFile, status
 
-from app.core.storage import MinioStorage
+from app.core.storage import AvatarStorage
 
 
 def test_validate_image_success_jpeg(
-    storage: MinioStorage, valid_jpeg_file: UploadFile
+    storage: AvatarStorage, valid_jpeg_file: UploadFile
 ):
     content = storage._validate_image(valid_jpeg_file)
 
@@ -16,7 +16,7 @@ def test_validate_image_success_jpeg(
 
 
 def test_validate_image_invalid_extension(
-    storage: MinioStorage, invalid_extension_file: UploadFile
+    storage: AvatarStorage, invalid_extension_file: UploadFile
 ):
     with pytest.raises(HTTPException) as exc_info:
         storage._validate_image(invalid_extension_file)
@@ -29,7 +29,7 @@ def test_validate_image_invalid_extension(
 
 
 def test_validate_image_exceeds_size_limit(
-    storage: MinioStorage, large_image_file: UploadFile
+    storage: AvatarStorage, large_image_file: UploadFile
 ):
     with pytest.raises(HTTPException) as exc_info:
         storage._validate_image(large_image_file)
@@ -42,7 +42,7 @@ def test_validate_image_exceeds_size_limit(
 
 
 def test_validate_image_corrupted_file(
-    storage: MinioStorage, corrupted_image_file: UploadFile
+    storage: AvatarStorage, corrupted_image_file: UploadFile
 ):
     with pytest.raises(HTTPException) as exc_info:
         storage._validate_image(corrupted_image_file)
