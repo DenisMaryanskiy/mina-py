@@ -63,3 +63,9 @@ class Message(Base, TimestampMixin, IsDeletedMixin):
         cascade="all, delete-orphan",
         lazy="selectin",
     )
+    reactions = relationship(
+        "MessageReaction",
+        back_populates="message",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )

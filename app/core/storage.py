@@ -392,7 +392,7 @@ class MediaStorage(BaseMinioStorage):
         dimensions: dict | None = None
 
         if file_type == "image":
-            full_content, dimensions, thumbnail_url = (
+            (full_content, dimensions, thumbnail_url) = (
                 self._process_and_upload_image(
                     full_content, mime_type, base_key, ext
                 )

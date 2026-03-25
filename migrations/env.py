@@ -20,9 +20,9 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-env = context.get_x_argument(as_dictionary=True).get('env', 'dev')
-
 settings = get_settings()
+
+env = context.get_x_argument(as_dictionary=True).get('env', settings.ENVIRONMENT)
 
 if env == "prod":
     conn_url = f"postgresql+asyncpg://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"

@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.schemas.attachments import AttachmentResponse
+from app.schemas.reactions import ReactionResponse
 
 MESSAGE_TYPES = Literal["text", "image", "video", "audio", "file", "system"]
 
@@ -110,6 +111,9 @@ class MessageResponse(BaseModel):
     attachments: list[AttachmentResponse] = Field(
         default_factory=list,
         description="Media and file attachments for this message",
+    )
+    reactions: list[ReactionResponse] = Field(
+        default_factory=list, description="Emoji reactions on this message"
     )
 
     model_config = ConfigDict(
