@@ -9,6 +9,12 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   test_postgres:
     image: postgres:15-alpine
@@ -20,17 +26,12 @@ services:
       - "5433:5432"
     volumes:
       - test_postgres_data:/var/lib/postgresql/data
-
-  backend:
-    build: .
-    container_name: backend
-    ports:
-      - "8000:8000"
-    depends_on:
-      - postgres
-    volumes:
-      - .:/app
-    command: uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${TEST_POSTGRES_USER} -d ${TEST_POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   redis:
     image: redis:7-alpine
@@ -41,7 +42,13 @@ services:
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis_data:/data
-  
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$REDIS_PASSWORD\" ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   rabbitmq:
     image: rabbitmq:3-management-alpine
     ports:
@@ -52,12 +59,18 @@ services:
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q check_port_connectivity"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
   minio:
     image: minio/minio:latest
     ports:
       - "9000:9000"
-      - "9001:9001"  # Console
+      - "9001:9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
@@ -66,9 +79,45 @@ services:
       - minio_data:/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
-      timeout: 20s
+      interval: 20s
+      timeout: 10s
       retries: 3
+      start_period: 10s
+
+  backend:
+    build: .
+    container_name: backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - /app/.venv  # anonymous volume — shadows the bind-mount, preserves the image-built venv
+    environment:
+      - ENVIRONMENT=prod
+      - POSTGRES_HOST=postgres
+      - REDIS_HOST=redis
+      - RABBITMQ_HOST=rabbitmq
+      - MINIO_ENDPOINT=minio:9000
+      - TEST_POSTGRES_HOST=test_postgres
+      - TEST_POSTGRES_PORT=5432
+    command: >
+      sh -c "uv run alembic upgrade head &&
+             uv run uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/docs')\" 2>/dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
 volumes:
   postgres_data:

@@ -1,16 +1,16 @@
 FROM python:3.14-slim
 
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 
 WORKDIR /app
 
-ENV UV_LINK_MODE=copy
+COPY pyproject.toml uv.lock ./
 
-COPY pyproject.toml uv.lock* ./
-
-RUN uv sync --frozen --no-cache
+RUN UV_LINK_MODE=copy uv sync --frozen --no-dev
 
 COPY . .
+
+ENV PYTHONPATH=/app
 
 EXPOSE 8000
 

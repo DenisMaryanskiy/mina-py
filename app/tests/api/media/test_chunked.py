@@ -45,7 +45,6 @@ async def test_send_chunk_incomplete(
         ),
         patch(
             "app.api.media.chunked.get_redis",
-            new_callable=AsyncMock,
             return_value=AsyncMock(
                 get=AsyncMock(return_value="data"),
                 set=AsyncMock(),
