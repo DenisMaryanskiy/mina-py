@@ -46,6 +46,23 @@ class ConversationCreate(BaseModel):
         ),
         examples=[["323e4567-e89b-12d3-a456-426614174002"]],
     )
+    description: str | None = Field(
+        None,
+        max_length=1000,
+        description="Group description (group conversations only)",
+    )
+    is_public: bool = Field(
+        default=False, description="Whether the group is publicly discoverable"
+    )
+    max_participants: int = Field(
+        default=1000,
+        ge=2,
+        le=10000,
+        description="Maximum number of participants allowed",
+    )
+    settings: dict | None = Field(
+        None, description="Custom group settings as key-value pairs"
+    )
 
     @field_validator("participant_ids")
     @classmethod
@@ -94,6 +111,14 @@ class ConversationResponse(BaseModel):
     last_message_at: datetime | None = Field(
         None, description="Timestamp of the most recent message"
     )
+    description: str | None = Field(None, description="Group description")
+    is_public: bool = Field(
+        default=False, description="Whether the group is publicly discoverable"
+    )
+    max_participants: int = Field(
+        default=1000, description="Maximum number of participants allowed"
+    )
+    settings: dict | None = Field(None, description="Custom group settings")
     participants: list[ParticipantResponse] = Field(
         default_factory=list, description="List of conversation participants"
     )
@@ -110,6 +135,10 @@ class ConversationResponse(BaseModel):
                 "created_at": "2026-02-01T10:00:00Z",
                 "updated_at": "2026-02-01T10:00:00Z",
                 "last_message_at": "2026-02-01T11:30:00Z",
+                "description": None,
+                "is_public": False,
+                "max_participants": 1000,
+                "settings": None,
                 "participants": [],
             }
         },
@@ -133,6 +162,13 @@ class ConversationListItem(BaseModel):
     last_message_at: datetime | None = Field(
         None, description="Timestamp of the most recent message"
     )
+    description: str | None = Field(None, description="Group description")
+    is_public: bool = Field(
+        default=False, description="Whether the group is publicly discoverable"
+    )
+    max_participants: int = Field(
+        default=1000, description="Maximum number of participants allowed"
+    )
     participant_count: int = Field(
         default=0, description="Total number of participants in the conversation"
     )
@@ -147,6 +183,9 @@ class ConversationListItem(BaseModel):
                 "avatar_url": "https://example.com/avatars/group.jpg",
                 "created_by": "123e4567-e89b-12d3-a456-426614174000",
                 "last_message_at": "2026-02-01T11:30:00Z",
+                "description": "A project group",
+                "is_public": False,
+                "max_participants": 1000,
                 "participant_count": 5,
             }
         },
