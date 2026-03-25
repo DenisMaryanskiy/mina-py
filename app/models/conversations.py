@@ -1,7 +1,16 @@
 import uuid
 
-from sqlalchemy import DateTime, ForeignKey, Index, String, text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    text,
+)
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
@@ -30,6 +39,16 @@ class Conversation(Base, TimestampMixin):
         DateTime(timezone=True), nullable=True
     )
 
+    # Group chat fields
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_public: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false", nullable=False
+    )
+    max_participants: Mapped[int] = mapped_column(
+        Integer, default=1000, server_default="1000", nullable=False
+    )
+    settings: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+
     participants = relationship(
         "ConversationParticipant",
         back_populates="conversation",
@@ -37,4 +56,9 @@ class Conversation(Base, TimestampMixin):
     )
     messages = relationship(
         "Message", back_populates="conversation", cascade="all, delete-orphan"
+    )
+    pinned_messages = relationship(
+        "PinnedMessage",
+        back_populates="conversation",
+        cascade="all, delete-orphan",
     )

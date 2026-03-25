@@ -92,6 +92,12 @@ class Settings(BaseSettings):
     WS_HEARTBEAT_TIMEOUT: int = 60  # seconds
     WS_MESSAGE_MAX_SIZE: int = 1024 * 1024  # 1MB
 
+    # CORS settings
+    ALLOWED_ORIGINS: list[str] = [
+        "http://localhost:5173",
+        "http://localhost:3000",
+    ]
+
     # Other settings
     ENVIRONMENT: str = "dev"  # dev or prod
 

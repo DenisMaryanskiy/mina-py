@@ -2,8 +2,10 @@ import os
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.conversations import conversations_router
+from app.api.groups import groups_router
 from app.api.media import media_router
 from app.api.messages import messages_router
 from app.api.users import users_router
@@ -29,10 +31,19 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
 app.include_router(users_router)
 app.include_router(ws_router)
 app.include_router(conversations_router)
+app.include_router(groups_router)
 app.include_router(messages_router)
 app.include_router(media_router)

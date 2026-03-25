@@ -93,6 +93,10 @@ async def create_conversation(
         name=data.name,
         avatar_url=data.avatar_url,
         created_by=current_user.id,
+        description=data.description,
+        is_public=data.is_public,
+        max_participants=data.max_participants,
+        settings=data.settings,
     )
     db.add(conversation)
     await db.flush()  # get ID
