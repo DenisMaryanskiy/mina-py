@@ -4,20 +4,17 @@ repos:
     hooks:
       - id: ruff
         name: ruff check
-        files: ^backend/
-        args: [--fix, --unsafe-fixes, --config=backend/ruff.toml]
+        args: [--fix, --unsafe-fixes, --config=ruff.toml]
         additional_dependencies: []
   - repo: https://github.com/psf/black
     rev: 24.3.0
     hooks:
       - id: black
         name: black code formatter
-        files: ^backend/
-        args: [--config=backend/pyproject.toml]
+        args: [--config=pyproject.toml]
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.18.2
     hooks:
       - id: mypy
         name: mypy type check
-        files: ^backend/
-        args: [--config-file=backend/pyproject.toml]
+        args: [--config-file=pyproject.toml]
