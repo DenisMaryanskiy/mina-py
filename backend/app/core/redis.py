@@ -250,6 +250,16 @@ class RedisClient:
             self.logger.error(f"Redis GET_MESSAGE error: {e}")
             return None
 
+    # ============ Token denylist operations ==============
+
+    async def denylist_token(self, token: str, ttl: int) -> bool:
+        """Add a token to the denylist; TTL = remaining token lifetime."""
+        return await self.set(f"denylist:{token}", "1", ttl=ttl)
+
+    async def is_token_denied(self, token: str) -> bool:
+        """Return True if the token has been revoked (is in the denylist)."""
+        return await self.exists(f"denylist:{token}")
+
     # ============ JSON operations ==============
 
     async def get_json(self, key: str) -> Any:

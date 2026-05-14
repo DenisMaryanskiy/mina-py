@@ -5,6 +5,7 @@ from fastapi.security import HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logger import get_logger
+from app.core.redis import get_redis
 from app.core.security import verify_token
 from app.models.users import User
 
@@ -18,7 +19,14 @@ async def get_current_user(token: str, db: AsyncSession) -> User:
     if not user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired refresh token",
+            detail="Invalid or expired token",
+        )
+
+    redis = get_redis()
+    if await redis.is_token_denied(token):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has been revoked",
         )
 
     user = await db.get(User, UUID(user_id))
