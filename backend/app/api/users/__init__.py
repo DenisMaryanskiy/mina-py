@@ -1,3 +1,4 @@
+# isort: skip_file
 from app.api.users.activation import users_router
 from app.api.users.avatar import users_router
 from app.api.users.login import users_router
