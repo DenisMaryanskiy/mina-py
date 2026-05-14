@@ -191,3 +191,25 @@ class LoginResponse(BaseModel):
     token: TokenResponse = Field(..., description="Authentication tokens")
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class UserSearchResult(BaseModel):
+    """Slim user representation returned by the search endpoint."""
+
+    id: UUID
+    username: str
+    avatar_url: str | None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UserPublicResponse(BaseModel):
+    """Public-facing user profile (no email or internal flags)."""
+
+    id: UUID
+    username: str
+    avatar_url: str | None
+    status: str | None
+    last_seen: datetime | None
+
+    model_config = ConfigDict(from_attributes=True)

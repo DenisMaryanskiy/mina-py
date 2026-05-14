@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi import HTTPException, WebSocket, status
@@ -14,7 +14,23 @@ async def test_get_current_user_invalid_token(async_session: AsyncSession):
     with pytest.raises(HTTPException) as exc_info:
         await get_current_user("invalid_token", async_session)
     assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
-    assert exc_info.value.detail == "Invalid or expired refresh token"
+    assert exc_info.value.detail == "Invalid or expired token"
+
+
+@pytest.mark.asyncio
+async def test_get_current_user_denylisted_token(
+    async_session: AsyncSession, seed_user: User
+):
+    token = create_access_token(seed_user.id)
+    mock_redis = AsyncMock()
+    mock_redis.is_token_denied = AsyncMock(return_value=True)
+
+    with patch("app.core.dependencies.get_redis", return_value=mock_redis):
+        with pytest.raises(HTTPException) as exc_info:
+            await get_current_user(token, async_session)
+
+    assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
+    assert exc_info.value.detail == "Token has been revoked"
 
 
 @pytest.mark.asyncio

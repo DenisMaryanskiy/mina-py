@@ -185,3 +185,27 @@ async def test_expire_error(
 
     assert result is False
     assert mock_logger.error.called
+
+
+@pytest.mark.asyncio
+async def test_denylist_token(
+    redis_client_instance: RedisClient, mock_redis_conn: AsyncMock
+):
+    mock_redis_conn.setex = AsyncMock(return_value=True)
+
+    result = await redis_client_instance.denylist_token("mytoken", 300)
+
+    assert result is True
+    mock_redis_conn.setex.assert_called_once_with("denylist:mytoken", 300, "1")
+
+
+@pytest.mark.asyncio
+async def test_is_token_denied(
+    redis_client_instance: RedisClient, mock_redis_conn: AsyncMock
+):
+    mock_redis_conn.exists = AsyncMock(return_value=1)
+
+    result = await redis_client_instance.is_token_denied("mytoken")
+
+    assert result is True
+    mock_redis_conn.exists.assert_called_once_with("denylist:mytoken")
