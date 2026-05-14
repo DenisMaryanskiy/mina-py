@@ -85,7 +85,7 @@ services:
       start_period: 10s
 
   backend:
-    build: .
+    build: ./backend
     container_name: backend
     ports:
       - "8000:8000"
@@ -99,7 +99,7 @@ services:
       minio:
         condition: service_healthy
     volumes:
-      - .:/app
+      - ./backend:/app
       - /app/.venv  # anonymous volume — shadows the bind-mount, preserves the image-built venv
     environment:
       - ENVIRONMENT=prod

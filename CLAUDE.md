@@ -1,12 +1,25 @@
 # MINA Messenger — Codebase Guide for Claude
 
 ## Project Overview
-FastAPI messenger backend. Python 3.14, `uv` package manager, PostgreSQL + async SQLAlchemy, Alembic migrations, Redis, RabbitMQ, MinIO (S3-compatible storage). 100% test coverage is required on all new code.
+Monorepo: FastAPI messenger backend + (future) React frontend. Python 3.14, `uv` package manager, PostgreSQL + async SQLAlchemy, Alembic migrations, Redis, RabbitMQ, MinIO (S3-compatible storage). 100% test coverage is required on all new backend code.
 
 ---
 
+## Monorepo Structure
+```
+mina-py/
+  backend/     ← FastAPI app (all backend code lives here)
+  frontend/    ← React app (Phase B, not yet created)
+  docker-compose.yaml
+  README.md
+  CLAUDE.md
+  .gitignore
+```
+
 ## Running Commands
 ```bash
+# Run from backend/ directory (or prefix with cd backend &&)
+cd backend
 uv run pytest -v --tb=short --cov --cov-report=term-missing   # run all tests
 uv run alembic upgrade head                                    # apply migrations
 uv run uvicorn app.main:app --host 0.0.0.0 --port 8000        # start server
@@ -14,116 +27,129 @@ uv run uvicorn app.main:app --host 0.0.0.0 --port 8000        # start server
 
 ## Docker
 ```bash
+# Run from repo root
 docker compose up --build   # full stack (postgres, test_postgres, redis, rabbitmq, minio, backend)
 ```
-Backend in Docker runs: `alembic upgrade head && uvicorn ...` at startup.
+Backend build context is `./backend`. Backend in Docker runs: `alembic upgrade head && uvicorn ...` at startup.
 `ENVIRONMENT=prod` is set in docker-compose so the backend connects to the prod DB, not test DB.
 
 ---
 
 ## Directory Layout
 ```
-app/
-  main.py                  # FastAPI app, includes all routers, adds validation_exception_handler
-  core/
-    config.py              # Settings (pydantic-settings, reads .env)
-    database.py            # SQLAlchemy engine; prod vs dev DB based on ENVIRONMENT env var
-    dependencies.py        # get_current_user (raises 401 for bad token, 403 for inactive user)
-                           # get_user_from_token_ws; security = HTTPBearer()
-    exception.py           # validation_exception_handler: converts 422 → 400
-    storage.py             # AvatarStorage, MediaStorage (MinIO wrappers)
-    redis.py               # get_redis() — SYNC function returning redis client
-    rabbitmq.py
-    websocket.py
-    lifespan.py
-    security.py            # create_access_token, verify_token, hash_password
-    logger.py              # get_logger()
-    email.py
-  models/
-    base.py                # Base (DeclarativeBase), TimestampMixin (created_at, updated_at),
-                           # IsDeletedMixin (is_deleted bool)
-    users.py               # User(Base, TimestampMixin, IsDeletedMixin)
-    conversations.py       # Conversation(Base, TimestampMixin) — type, name, avatar_url, created_by, last_message_at
-    conversation_participants.py  # ConversationParticipant(Base, TimestampMixin)
-                                  # — role ('admin'|'member'), joined_at, last_read_message_id, muted_until, notification_settings(JSONB)
-    messages.py            # Message(Base, TimestampMixin, IsDeletedMixin)
-    attachments.py         # MessageAttachment(Base) — no soft-delete
-    reactions.py           # MessageReaction(Base, TimestampMixin) — no soft-delete
-                           # UniqueConstraint(message_id, user_id, emoji)
-    __init__.py            # imports all models + __all__ list (Alembic needs this)
-  schemas/
-    base.py                # GenericMessageResponse, HTTPErrorResponse
-    users.py
-    conversations.py       # ConversationCreate, ConversationResponse, ConversationListItem
-    participants.py        # ParticipantResponse, AddParticipantsRequest
-    messages.py            # MessageCreate, MessageEdit, MessageResponse, PaginatedMessages, MessageSearchResponse
-    attachments.py         # AttachmentResponse
-    reactions.py           # ReactionCreate, ReactionResponse, ReactionSummaryItem, ReactionSummaryResponse
-    presence.py
-  api/
-    conversations/
-      router.py            # APIRouter(prefix="/conversations", tags=["Conversations"])
-      __init__.py          # imports all handler modules to register routes
-      create.py            # POST /conversations
-      delete.py            # DELETE /conversations/{id}
-      get_by_id.py         # GET /conversations/{id}
-      get_by_user.py       # GET /conversations
-      participants.py      # POST /conversations/{id}/participants
-                           # DELETE /conversations/{id}/participants/{user_id}
-    messages/
-      router.py            # APIRouter(prefix="/messages", tags=["Messages"])
-      __init__.py
-      send.py              # POST /conversations/{conv_id}/messages
-      get.py               # GET /conversations/{conv_id}/messages (paginated)
-      edit.py              # PATCH /messages/{id}
-      delete.py            # DELETE /messages/{id}
-      mark_read.py         # POST /messages/{id}/read
-      search.py            # GET /conversations/{conv_id}/messages/search
-      reactions_add.py     # POST /messages/{id}/reactions
-      reactions_remove.py  # DELETE /messages/{id}/reactions/{emoji}
-      reactions_get.py     # GET /messages/{id}/reactions
-    media/
-      router.py            # APIRouter(prefix="/media", tags=["Media"])
-      __init__.py
-      upload.py            # POST /media/upload (avatar)
-      attachments.py       # POST /media/attachments, DELETE /media/attachments/{id}
-      chunked.py           # POST /media/chunked/init, POST /media/chunked/chunk
-    users/
-      router.py            # APIRouter(prefix="/users", tags=["Users"])
-      __init__.py
-      register.py, activation.py, resend.py, login.py, avatar.py, update_status.py, presence.py
-    websockets/
-      router.py            # APIRouter(prefix="/ws", tags=["WebSockets"])
-      __init__.py
-      endpoint.py, messages.py
-  utils/
-    get_active_message.py  # get_active_message(db, message_id) → Message or 404
-    require_participant.py # require_participant(db, conv_id, user_id) → ConversationParticipant or 403
-  tests/
-    conftest.py            # DB engine, migrations fixture (session-scoped, downgrade→upgrade),
-                           # async_session (per-test transaction rollback), override_get_db,
-                           # async_client, minio_container, storage/minio fixtures,
-                           # seed_user (inactive)
+backend/
+  app/
+    main.py                  # FastAPI app, includes all routers, adds validation_exception_handler
+    core/
+      config.py              # Settings (pydantic-settings, reads .env)
+      database.py            # SQLAlchemy engine; prod vs dev DB based on ENVIRONMENT env var
+      dependencies.py        # get_current_user (raises 401 for bad token, 403 for inactive user)
+                             # get_user_from_token_ws; security = HTTPBearer()
+      exception.py           # validation_exception_handler: converts 422 → 400
+      storage.py             # AvatarStorage, MediaStorage (MinIO wrappers)
+      redis.py               # get_redis() — SYNC function returning RedisClient singleton
+                             # RedisClient.denylist_token(token, ttl) / is_token_denied(token)
+      rabbitmq.py
+      websocket.py
+      lifespan.py
+      security.py            # create_access_token, create_refresh_token, verify_token, hash_password
+      logger.py              # get_logger()
+      email.py
+    models/
+      base.py                # Base (DeclarativeBase), TimestampMixin (created_at, updated_at),
+                             # IsDeletedMixin (is_deleted bool)
+      users.py               # User(Base, TimestampMixin, IsDeletedMixin)
+      conversations.py       # Conversation(Base, TimestampMixin) — type, name, avatar_url, created_by, last_message_at
+      conversation_participants.py  # ConversationParticipant(Base, TimestampMixin)
+                                    # — role ('admin'|'member'), joined_at, last_read_message_id, muted_until, notification_settings(JSONB)
+      messages.py            # Message(Base, TimestampMixin, IsDeletedMixin)
+      attachments.py         # MessageAttachment(Base) — no soft-delete
+      reactions.py           # MessageReaction(Base, TimestampMixin) — no soft-delete
+                             # UniqueConstraint(message_id, user_id, emoji)
+      __init__.py            # imports all models + __all__ list (Alembic needs this)
+    schemas/
+      base.py                # GenericMessageResponse, HTTPErrorResponse
+      users.py               # UserResponse, TokenResponse, LoginResponse, UserPublicResponse, UserSearchResult
+      conversations.py       # ConversationCreate, ConversationResponse, ConversationListItem
+      participants.py        # ParticipantResponse, AddParticipantsRequest
+      messages.py            # MessageCreate, MessageEdit, MessageResponse, PaginatedMessages, MessageSearchResponse
+      attachments.py         # AttachmentResponse
+      reactions.py           # ReactionCreate, ReactionResponse, ReactionSummaryItem, ReactionSummaryResponse
+      presence.py
     api/
-      conftest.py          # seed_activated_user, seed_activated_users (3 users),
-                           # login_user, seed_direct_conversation, seed_group_conversation,
-                           # seed_message, test_token/test_user_id
-      conversations/test_create.py, test_delete.py, test_get.py, test_participants.py
-      messages/test_send.py, test_get.py, test_edit.py, test_delete.py,
-               test_mark_read.py, test_search.py, test_reactions.py
-      media/conftest.py, test_upload.py, test_attachments.py, test_chunked.py
-      users/test_register.py, test_activation.py, test_resend.py, test_login.py,
-            test_avatar.py, test_update_status.py, test_presence.py, test_refresh.py
-      websockets/test_endpoint.py, test_message.py
-    core/test_database.py, test_dependencies.py, test_lifespan.py, test_token.py
-         redis/..., rabbitmq/..., storage/..., websocket/...
-migrations/
-  versions/
-    b6e1437c4409_create_users_table.py
-    81ee78e878a1_create_conversations_participants_and_.py
-    e61957fe1201_add_attachments.py
-    f3a8c2d91e04_add_message_reactions.py   ← current HEAD
-  env.py   # uses settings.ENVIRONMENT to pick prod vs test DB URL
+      conversations/
+        router.py            # APIRouter(prefix="/conversations", tags=["Conversations"])
+        __init__.py          # imports all handler modules to register routes
+        create.py            # POST /conversations
+        delete.py            # DELETE /conversations/{id}
+        get_by_id.py         # GET /conversations/{id}
+        get_by_user.py       # GET /conversations
+        participants.py      # POST /conversations/{id}/participants
+                             # DELETE /conversations/{id}/participants/{user_id}
+      messages/
+        router.py            # APIRouter(prefix="/messages", tags=["Messages"])
+        __init__.py
+        send.py              # POST /conversations/{conv_id}/messages
+        get.py               # GET /conversations/{conv_id}/messages (paginated)
+        edit.py              # PATCH /messages/{id}
+        delete.py            # DELETE /messages/{id}
+        mark_read.py         # POST /messages/{id}/read
+        search.py            # GET /conversations/{conv_id}/messages/search
+        reactions_add.py     # POST /messages/{id}/reactions
+        reactions_remove.py  # DELETE /messages/{id}/reactions/{emoji}
+        reactions_get.py     # GET /messages/{id}/reactions
+      media/
+        router.py            # APIRouter(prefix="/media", tags=["Media"])
+        __init__.py
+        upload.py            # POST /media/upload (avatar)
+        attachments.py       # POST /media/attachments, DELETE /media/attachments/{id}
+        chunked.py           # POST /media/chunked/init, POST /media/chunked/chunk
+      users/
+        router.py            # APIRouter(prefix="/users", tags=["Users"])
+        __init__.py
+        register.py, activation.py, resend.py, login.py (also /refresh), avatar.py,
+        update_status.py, presence.py, search.py, profile.py, logout.py
+      websockets/
+        router.py            # APIRouter(prefix="/ws", tags=["WebSockets"])
+        __init__.py
+        endpoint.py, messages.py
+      groups/
+        router.py            # APIRouter(prefix="/groups", tags=["Groups"])
+        __init__.py
+        update.py, members.py, leave.py
+    utils/
+      get_active_message.py  # get_active_message(db, message_id) → Message or 404
+      require_participant.py # require_participant(db, conv_id, user_id) → ConversationParticipant or 403
+    tests/
+      conftest.py            # DB engine, migrations fixture (session-scoped, downgrade→upgrade),
+                             # async_session (per-test transaction rollback), override_get_db,
+                             # async_client, minio_container, storage/minio fixtures,
+                             # seed_user (inactive)
+      api/
+        conftest.py          # seed_activated_user, seed_activated_users (3 users),
+                             # login_user, seed_direct_conversation, seed_group_conversation,
+                             # seed_message, test_token/test_user_id
+        conversations/test_create.py, test_delete.py, test_get.py, test_participants.py
+        messages/test_send.py, test_get.py, test_edit.py, test_delete.py,
+                 test_mark_read.py, test_search.py, test_reactions.py
+        media/conftest.py, test_upload.py, test_attachments.py, test_chunked.py
+        users/test_register.py, test_activation.py, test_resend.py, test_login.py,
+              test_avatar.py, test_update_status.py, test_presence.py, test_refresh.py,
+              test_search.py, test_profile.py, test_logout.py
+        websockets/test_endpoint.py, test_message.py
+      core/test_database.py, test_dependencies.py, test_lifespan.py, test_token.py
+           redis/..., rabbitmq/..., storage/..., websocket/...
+  migrations/
+    versions/
+      b6e1437c4409_create_users_table.py
+      81ee78e878a1_create_conversations_participants_and_.py
+      e61957fe1201_add_attachments.py
+      f3a8c2d91e04_add_message_reactions.py   ← current HEAD
+    env.py   # uses settings.ENVIRONMENT to pick prod vs test DB URL
+  pyproject.toml
+  alembic.ini
+  Dockerfile
+  .env
 ```
 
 ---
@@ -134,7 +160,8 @@ migrations/
 ```python
 from app.core.dependencies import get_current_user, security
 current_user = await get_current_user(credentials.credentials, db)
-# Raises 401 for invalid/expired token, 403 for inactive/deleted user
+# Raises 401 for invalid/expired token or revoked (denylisted) token
+# Raises 403 for inactive/deleted user
 ```
 
 ### Router Registration Pattern
@@ -154,6 +181,7 @@ Tests asserting validation failures must use `status_code == 400`, NOT 422.
 ### Unauthenticated Requests
 No `Authorization` header → returns **401** (HTTPBearer with `auto_error=True`).
 Bad/expired token → `get_current_user` raises **401**.
+Revoked token (after logout) → `get_current_user` raises **401**.
 **Always assert 401 for unauthenticated tests** (no token or bad token).
 
 ### Database Session (tests)
@@ -192,6 +220,11 @@ redis_client = get_redis()  # NOT await get_redis()
 ```
 When patching in tests: `patch("...get_redis", return_value=AsyncMock(...))` — no `new_callable=AsyncMock`.
 
+### Token Denylist (logout)
+`RedisClient` has `denylist_token(token, ttl)` and `is_token_denied(token)` helpers.
+`get_current_user` calls `is_token_denied` before returning the user — a denylisted token raises 401.
+Patch Redis in logout tests via `patch("app.core.dependencies.get_redis", return_value=mock)`.
+
 ---
 
 ## Roadmap Progress
@@ -202,44 +235,14 @@ When patching in tests: `patch("...get_redis", return_value=AsyncMock(...))` —
 - **§1.3** Presence & Typing Indicators (Redis-backed presence, WebSocket events)
 - **§2.1** Media & File Sharing (attachments, chunked upload, thumbnails, virus scan)
 - **§2.2** Message Reactions (add/remove/get emoji reactions, 100% coverage)
-
-### 🔲 Next: §2.3 Group Chat Management
-**Branch**: `feat/group-chat-management`
-
-**DB changes needed**:
-```sql
--- Extend conversations table
-ALTER TABLE conversations ADD COLUMN description TEXT;
-ALTER TABLE conversations ADD COLUMN is_public BOOLEAN DEFAULT FALSE;
-ALTER TABLE conversations ADD COLUMN max_participants INTEGER DEFAULT 1000;
-ALTER TABLE conversations ADD COLUMN settings JSONB;
-
--- New table
-CREATE TABLE pinned_messages (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-    message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
-    pinned_by UUID NOT NULL REFERENCES users(id),
-    pinned_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE(conversation_id, message_id)
-);
-```
-
-**API endpoints**:
-- `PATCH /api/v1/groups/{id}` — Update group info (name, avatar, description, is_public, max_participants, settings). Admin only.
-- `PATCH /api/v1/groups/{id}/members/{user_id}` — Update member role (promote/demote). Admin only.
-- `POST /api/v1/groups/{id}/leave` — Leave group (last admin must transfer or group dissolves).
-- `POST /api/v1/messages/{id}/pin` — Pin message. Admin only.
-- `DELETE /api/v1/messages/{id}/pin` — Unpin message. Admin only.
-
-**Note**: `POST /groups` (create group) is already handled by `POST /conversations` with `type="group"`.
-`POST /groups/{id}/members` is already `POST /conversations/{id}/participants`.
-`DELETE /groups/{id}/members/{user_id}` is already `DELETE /conversations/{id}/participants/{user_id}`.
+- **§2.3** Group Chat Management (update group, member roles, leave, pin/unpin messages)
+- **Phase A** — Token refresh, user search, public profile, logout with Redis denylist
 
 ### Future Phases
 - **§3.1** Contacts & Friend System
 - **§3.2** User Profiles & Privacy
 - **§3.3** Search & Discovery
+- **Phase B** — React frontend (Vite + TypeScript + TailwindCSS + TanStack Query + Zustand)
 
 ---
 
@@ -251,7 +254,7 @@ CREATE TABLE pinned_messages (
 | redis | 6379 | requires auth via REDIS_PASSWORD |
 | rabbitmq | 5672, 15672 | management UI on 15672 |
 | minio | 9000, 9001 | console on 9001 |
-| backend | 8000 | depends_on all services healthy |
+| backend | 8000 | build context: ./backend, depends_on all services healthy |
 
 All services have healthchecks. Backend waits for healthy deps before starting.
 RabbitMQ healthcheck uses `rabbitmq-diagnostics -q check_port_connectivity` (not `ping` — that passes before AMQP port is ready).
@@ -267,3 +270,4 @@ RabbitMQ healthcheck uses `rabbitmq-diagnostics -q check_port_connectivity` (not
 6. **migrations/env.py** — uses `settings.ENVIRONMENT` as default for DB URL selection
 7. **Black** is a pre-commit hook — if it reformats files, re-stage and re-commit
 8. **UV_LINK_MODE=copy** — needed in Dockerfile to avoid hardlink warnings in Docker volumes
+9. **Working directory for backend commands is `backend/`** — all `uv run` commands must be run from `backend/`, not the repo root
